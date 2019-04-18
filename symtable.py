@@ -1,4 +1,4 @@
-
+# 保存符号表
 
 
 class Symtable:
@@ -14,6 +14,9 @@ class Symtable:
         if key in self._dict:
             return self._dict[key]
         return None
+
+
+g_symtable = Symtable()
 
 
 if __name__ == '__main__':
