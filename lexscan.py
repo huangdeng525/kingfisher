@@ -19,21 +19,80 @@ all_key_words = {"::", "asm", "do", "for", "##", "int", "const", "struct", "#ass
                  "while", "#define"}
 
 
+_all_files = None
+
+
 def is_keyword(word):
     if word in all_key_words:
         return True
     return False
 
 
-class Proc:
-    def __init__(self, file, all_file):
-        self.parser = []
-        self.all_file = all_file
-        self.parser.append(self)
-        self._file = []
-        self._file.append(file)
+class ParseBase:
+    def __init__(self, proc):
+        self.proc = proc
         self._tmp = ''
         self._string_flag = ''
+
+    def process(self, c):
+        rsp = self.next_token(c, '#"')
+        if not rsp:
+            return
+        if rsp == 'include':
+            self.proc.push_parser(Include(self.proc))
+
+    def next_token(self, c, token, need_next_line=True):
+        # skip spaces
+        if c in {' ', '\t'}:
+            return None
+        # finish once token
+        if c == '\n':
+            return None
+
+        if c in {'"', "'"}:
+            if self._string_flag == c:
+                self._string_flag = ''
+                return self._tmp
+            else:
+                self._string_flag = c
+
+        if c in token:
+            return self._tmp
+
+        self._tmp += c
+
+        return None
+
+    def analyse(self):
+        pass
+
+class Enum(ParseBase):
+    def __init__(self, proc):
+        ParseBase.__init__(self, proc)
+
+    def process(self, c):
+        pass
+
+class Include(ParseBase):
+    def __init__(self, proc):
+        ParseBase.__init__(self, proc)
+        self.proc = proc
+
+    def process(self, c):
+        file = self.next_token(c, '"\'', False)
+        if file and _all_files:
+            new_file = _all_files.get_file(file)
+            if new_file:
+                self.proc.push_file(File(new_file))
+                return
+
+class Proc:
+    def __init__(self, file):
+        self.parser = []
+        self.parser.append(ParseBase(self))
+        self._file = []
+        self._file.append(file)
+
 
     def push_file(self, file):
         self._file.append(file)
@@ -52,43 +111,12 @@ class Proc:
     def entry(self):
         while True:
             n_char = self._file[-1].next_char()
+            if not n_char and len(self._file) > 1:
+                self._file.pop(-1)
+                self._tmp = ''
+                continue
             self.parser[-1].process(n_char)
 
-    def process(self, c):
-        # skip spaces
-        if c in {' ', '\t'}:
-            return
-        # finish once token
-        if c == '\n':
-            return
-
-        if c in {'"', "'"}:
-            self._string_flag = c
-
-    def analyse(self):
-        pass
-
-class Enum(Proc):
-    def __init__(self):
-        pass
-
-
-class Include(Proc):
-    def __init__(self):
-        pass
-
-    def Parser(self):
-        string_flag = ''
-        for c in self.all_char():
-            # skip spaces
-            if c in {' ', '\t'}:
-                continue
-            # finish once token
-            if c == '\n':
-                self.once()
-
-            if c in {'"', "'"}:
-                string_flag = c
 
 class File:
     def __init__(self, full_name):
@@ -113,16 +141,6 @@ class File:
             return ret
         return None
 
-    def all_char(self):
-        ''' 暂时不用 '''
-        return
-        for line in self._lines:
-            self._cur_line += 1
-            self._cur_col = 0
-            for col in line:
-                yield col
-                self._cur_col += 1
-
 
 class AllFile:
     def __init__(self, root):
@@ -143,11 +161,9 @@ class AllFile:
 
 if __name__ == '__main__':
     p = AllFile('D:\\github\\kingfisher\\test')
-    p1 = File(p.get_file('test1.h'))
-    for x in range(1000):
-        t = p1.next_char(newline=True)
-        if t:
-            print(t)
-        else:
-            break
+    _all_files = p
+    p1 = File(p.get_file('test.h'))
+    p2 = Proc(p1)
+    p2.entry()
+
 
