@@ -35,29 +35,37 @@ class ParseBase:
         self._string_flag = ''
 
     def process(self, c):
-        rsp = self.next_token(c, '#"')
+        rsp = self.next_token(c, '')
         if not rsp:
             return
-        if rsp == 'include':
+        if rsp == '#include':
             self.proc.push_parser(Include(self.proc))
 
     def next_token(self, c, token, need_next_line=True):
         # skip spaces
         if c in {' ', '\t'}:
-            return None
+            tmp = self._tmp
+            self._tmp = ''
+            return tmp
         # finish once token
         if c == '\n':
-            return None
+            tmp = self._tmp
+            self._tmp = ''
+            return tmp
 
         if c in {'"', "'"}:
             if self._string_flag == c:
                 self._string_flag = ''
-                return self._tmp
+                tmp = self._tmp
+                self._tmp = ''
+                return tmp
             else:
                 self._string_flag = c
 
         if c in token:
-            return self._tmp
+            tmp = self._tmp
+            self._tmp = ''
+            return tmp
 
         self._tmp += c
 
@@ -124,7 +132,7 @@ class File:
         self._content = f.read()
         f.close()
         self._cur_line = 1
-        self._cur_loc = 0
+        self._cur_loc = 1
         self._len = len(self._content)
 
     def get_cur_line(self):
@@ -160,7 +168,7 @@ class AllFile:
 
 
 if __name__ == '__main__':
-    p = AllFile('D:\\github\\kingfisher\\test')
+    p = AllFile('D:\\git\\kingfisher\\test')
     _all_files = p
     p1 = File(p.get_file('test.h'))
     p2 = Proc(p1)
