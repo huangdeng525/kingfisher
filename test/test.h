@@ -1,4 +1,4 @@
-﻿#ifndef _DCOP_ERR_H_
+#ifndef _DCOP_ERR_H_
 #define _DCOP_ERR_H_
 
 #include "test1.h"
@@ -9,7 +9,7 @@
 /// 操作系统错误码
 enum DCOP_ERRCODE_OS
 {
-    ERRCODE_OS_BASE         = (ERRCODE_OS) << 16,
+    ERRCODE_OS_BASE         = DCOP_ERRCODE(ERRCODE_OS, ERRCODE_SEM, 0),
 
     ERRCODE_OS_END
 };
@@ -17,7 +17,7 @@ enum DCOP_ERRCODE_OS
 /// 任务错误码
 enum DCOP_ERRCODE_TASK
 {
-    ERRCODE_TASK_BASE       = (ERRCODE_TASK) << 16,
+    ERRCODE_TASK_BASE       = (ERRCODE_TASK) + 16,
 
     ERRCODE_TASK_WRONG_HANDLE,                  // 0x00020001 - 错误句柄
     ERRCODE_TASK_CREATE_FAIL,                   // 0x00020002 - 创建任务失败
@@ -87,6 +87,13 @@ enum DCOP_ERRCODE_IO
 
     ERRCODE_IO_END
 };
+
+#define DCOP_ERRCODE_LIST \ 
+	ERRCODE2LISTS(ERRCODE_IO_NO_RIGHT_TO_OPERATE, "to operator", "操作错误") \
+	ERRCODE2LISTS(ERRCODE_SOCK_RECV_ERROR, "to operator" \
+					"new line", "操作错误" \
+					"新的一行") \
+
 
 
 #endif // #ifndef _DCOP_ERR_H_

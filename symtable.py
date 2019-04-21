@@ -13,7 +13,7 @@ class Symtable:
     def get(self, key):
         if key in self._dict:
             return self._dict[key]
-        return None
+        return key
 
 
 g_symtable = Symtable()

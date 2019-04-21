@@ -1,4 +1,4 @@
-﻿#ifndef _DCOP_ERR1_H_
+#ifndef _DCOP_ERR1_H_
 #define _DCOP_ERR1_H_
 
 /// 错误码基址(需要左移16个bit)
