@@ -33,7 +33,7 @@ class File:
         f = all_file.get_file(file)
         if not f:
             return False
-        f = open(f, encoding='utf-8')
+        f = open(f, encoding='gb2132')
         self._content = f.read()
         f.close()
         self._len = len(self._content)

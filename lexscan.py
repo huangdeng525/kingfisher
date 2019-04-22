@@ -1,7 +1,7 @@
 
 
 from pre import Pre
-from symtable import g_symtable
+from symtable import g_symtable, g_errinfo
 
 all_key_words = {"::", "asm", "do", "for", "##", "int", "const", "struct", "#assert",
                  "continue", "const_cast", "static", "virtual", "unsigned", "goto", "__asm",
@@ -51,13 +51,16 @@ class ParseBase:
             if p:
                 self.proc.push_parser(p)
 
+        if c == '(' and rsp == 'ERRCODE2LISTS':
+            self.proc.push_parser(ErrInfo(self.proc))
+
     def next_token(self, c, token, skip_space=False):
         # skip spaces
         if c in {' ', '\t'} and skip_space == False:
             tmp = self._tmp
             self._tmp = ''
             return tmp, c
-        if c in {' ', '\t'}:
+        if c in {' ', '\t'} and self._string_flag == '':
             return '', ''
         # finish once token
         if c == '\n':
@@ -71,10 +74,11 @@ class ParseBase:
                 tmp = self._tmp
                 self._tmp = ''
                 return tmp, c
-            else:
+            elif self._string_flag == '':
                 self._string_flag = c
+                return '', ''
 
-        if c in token:
+        if c in token and self._string_flag == '':
             tmp = self._tmp
             self._tmp = ''
             return tmp, c
@@ -82,6 +86,31 @@ class ParseBase:
         self._tmp += c
 
         return '', ''
+
+
+class ErrInfo(ParseBase):
+    def __init__(self, proc):
+        ParseBase.__init__(self, proc)
+        self.name = []
+        self.tmp = ''
+        self.valid = False
+
+    def process(self, in_c):
+        token = ',)\\'
+        rsp, c = self.next_token(in_c, token, skip_space=True)
+        if c == '':
+            return
+        if len(rsp) > 0:
+            self.tmp += rsp
+        if c in ',)':
+            self.name.append(self.tmp)
+            self.tmp = ''
+        if c == '"':
+            self.valid = True
+        if c == ')':
+            if self.valid:
+                g_errinfo.put(self.name)
+            self.proc.pop_parser()
 
 
 class op:
@@ -272,5 +301,5 @@ class Proc:
 if __name__ == '__main__':
     p2 = Proc('test.h')
     p2.entry()
-
-
+    g_errinfo.Dump('d:/errcode.json')
+    g_symtable.Dump('d:/symtable.json')
